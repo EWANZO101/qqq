@@ -1,0 +1,355 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Review Application #{{ application.id }} - Admin - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('admin.applications_by_type', slug=application.app_type.slug) }}" 
+           class="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-4">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to {{ application.app_type.name }} Applications
+        </a>
+        
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-4">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                    <i data-lucide="clipboard-check" class="w-7 h-7 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-display text-2xl font-bold text-white">Review Application #{{ application.id }}</h1>
+                    <p class="text-gray-400">{{ application.app_type.name }} • {{ application.user.username }}</p>
+                </div>
+            </div>
+            
+            <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium border {{ application.status_badge_class }}">
+                {% if application.status == 'pending' %}
+                <span class="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
+                {% elif application.status == 'accepted' %}
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                {% else %}
+                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                {% endif %}
+                {{ application.status|title }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Application Details -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-6 flex items-center">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-2 text-primary-400"></i>
+                    Application Details
+                </h2>
+                
+                <dl class="space-y-6">
+                    {% for field in form_fields %}
+                    <div class="border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                        <dt class="text-sm font-medium text-gray-400 mb-2">{{ field.label }}</dt>
+                        <dd class="text-white">
+                            {% if form_data.get(field.name) %}
+                                {% if field.type == 'textarea' %}
+                                <div class="bg-surface-800/50 rounded-xl p-4 whitespace-pre-wrap text-gray-200">{{ form_data.get(field.name) }}</div>
+                                {% else %}
+                                {{ form_data.get(field.name) }}
+                                {% endif %}
+                            {% else %}
+                            <span class="text-gray-500 italic">Not provided</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            
+            <!-- Current Denial Reason (if denied) -->
+            {% if application.status == 'denied' and application.denial_reason %}
+            <div class="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-900/10">
+                <h2 class="font-semibold text-red-400 mb-3 flex items-center">
+                    <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                    Current Denial Reason
+                </h2>
+                <p class="text-gray-300">{{ application.denial_reason }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Review Actions -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-6 flex items-center">
+                    <i data-lucide="gavel" class="w-5 h-5 mr-2 text-primary-400"></i>
+                    Review Actions
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <!-- Accept Button -->
+                    <form method="POST" class="inline">
+                        <input type="hidden" name="action" value="accept">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-medium transition-colors"
+                                onclick="return confirm('Accept this application?');">
+                            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                            Accept
+                        </button>
+                    </form>
+                    
+                    <!-- Set Pending Button -->
+                    <form method="POST" class="inline">
+                        <input type="hidden" name="action" value="pending">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-6 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white font-medium transition-colors"
+                                onclick="return confirm('Reset this application to pending?');">
+                            <i data-lucide="clock" class="w-5 h-5 mr-2"></i>
+                            Set Pending
+                        </button>
+                    </form>
+                    
+                    <!-- Edit Button -->
+                    <a href="{{ url_for('admin.edit_application', id=application.id) }}" 
+                       class="w-full flex items-center justify-center px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors">
+                        <i data-lucide="pencil" class="w-5 h-5 mr-2"></i>
+                        Edit
+                    </a>
+                </div>
+                
+                <!-- Deny Form -->
+                <form method="POST" class="space-y-4" id="denyForm">
+                    <input type="hidden" name="action" value="deny">
+                    <div>
+                        <label for="denial_reason" class="block text-sm font-medium text-gray-300 mb-2">
+                            Denial Reason <span class="text-red-400">*</span>
+                        </label>
+                        <textarea id="denial_reason" name="denial_reason" rows="3" required
+                                  class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                                  placeholder="Provide a reason for denying this application...">{{ application.denial_reason or '' }}</textarea>
+                    </div>
+                    <button type="submit" 
+                            class="w-full flex items-center justify-center px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition-colors"
+                            onclick="return confirm('Deny this application?');">
+                        <i data-lucide="x-circle" class="w-5 h-5 mr-2"></i>
+                        Deny Application
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Applicant Info -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-4 flex items-center">
+                    <i data-lucide="user" class="w-5 h-5 mr-2 text-primary-400"></i>
+                    Applicant Info
+                </h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Username</dt>
+                        <dd class="text-white">{{ application.user.username }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Email</dt>
+                        <dd class="text-white text-right truncate max-w-[150px]" title="{{ application.user.email }}">{{ application.user.email }}</dd>
+                    </div>
+                    {% if application.user.discord_id %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Discord ID</dt>
+                        <dd class="text-white">{{ application.user.discord_id }}</dd>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Joined</dt>
+                        <dd class="text-white">{{ application.user.created_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <!-- Application Info -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-4 flex items-center">
+                    <i data-lucide="info" class="w-5 h-5 mr-2 text-primary-400"></i>
+                    Application Info
+                </h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Application ID</dt>
+                        <dd class="text-white">#{{ application.id }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Submitted</dt>
+                        <dd class="text-white">{{ application.created_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Last Updated</dt>
+                        <dd class="text-white">{{ application.updated_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    {% if application.reviewer %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Reviewed By</dt>
+                        <dd class="text-white">{{ application.reviewer.username }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if application.reviewed_at %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Reviewed At</dt>
+                        <dd class="text-white">{{ application.reviewed_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+            
+            
+    <!-- Enhanced Status History with Timeline -->
+    {% if status_history %}
+    <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="font-semibold text-white flex items-center">
+                <i data-lucide="history" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Status History
+            </h2>
+            <span class="text-xs text-gray-500">{{ status_history|length + 1 }} events</span>
+        </div>
+        
+        <div class="relative">
+            <!-- Vertical timeline line -->
+            <div class="absolute left-[19px] top-12 bottom-12 w-0.5 bg-gradient-to-b from-primary-500/50 via-purple-500/50 to-transparent"></div>
+            
+            <!-- Timeline items -->
+            <div class="space-y-6">
+                {% for history in status_history %}
+                <div class="relative pl-14">
+                    <!-- Timeline dot with icon -->
+                    <div class="absolute left-0 top-2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg
+                        {% if history.new_status == 'accepted' %}
+                            bg-gradient-to-br from-green-500 to-emerald-600
+                        {% elif history.new_status == 'denied' %}
+                            bg-gradient-to-br from-red-500 to-rose-600
+                        {% elif history.new_status == 'pending' %}
+                            bg-gradient-to-br from-yellow-500 to-amber-600
+                        {% else %}
+                            bg-gradient-to-br from-gray-500 to-slate-600
+                        {% endif %}">
+                        {% if history.new_status == 'accepted' %}
+                            <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+                        {% elif history.new_status == 'denied' %}
+                            <i data-lucide="x-circle" class="w-5 h-5 text-white"></i>
+                        {% elif history.new_status == 'pending' %}
+                            <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                        {% else %}
+                            <i data-lucide="circle" class="w-5 h-5 text-white"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Content card -->
+                    <div class="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-xl p-5 border border-white/10 hover:border-white/20 transition-all hover:shadow-lg hover:shadow-primary-500/10">
+                        <!-- Status change -->
+                        <div class="flex items-center space-x-3 mb-3">
+                            {% if history.old_status %}
+                                <span class="px-3 py-1 rounded-lg bg-white/5 text-gray-300 text-sm font-medium">
+                                    {{ history.old_status|title }}
+                                </span>
+                                <div class="flex items-center">
+                                    <i data-lucide="arrow-right" class="w-5 h-5 text-primary-400"></i>
+                                </div>
+                            {% endif %}
+                            <span class="px-3 py-1 rounded-lg text-sm font-bold
+                                {% if history.new_status == 'accepted' %}
+                                    bg-green-500/20 text-green-300 border border-green-500/30
+                                {% elif history.new_status == 'denied' %}
+                                    bg-red-500/20 text-red-300 border border-red-500/30
+                                {% elif history.new_status == 'pending' %}
+                                    bg-yellow-500/20 text-yellow-300 border border-yellow-500/30
+                                {% else %}
+                                    bg-gray-500/20 text-gray-300 border border-gray-500/30
+                                {% endif %}">
+                                {{ history.new_status|title }}
+                            </span>
+                        </div>
+                        
+                        <!-- Metadata -->
+                        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                            <span class="flex items-center">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-1.5"></i>
+                                {{ history.created_at|datetime('%b %d, %Y at %I:%M %p') }}
+                            </span>
+                            {% if history.changed_by %}
+                            <span class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center mr-1.5">
+                                    <span class="text-white text-xs font-semibold">{{ history.changed_by.username[0]|upper }}</span>
+                                </div>
+                                <span class="text-white">{{ history.changed_by.username }}</span>
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Reason/Note -->
+                        {% if history.reason %}
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <div class="flex items-start space-x-2">
+                                <i data-lucide="message-square" class="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0"></i>
+                                <p class="text-sm text-gray-300 italic">{{ history.reason }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Initial submission event -->
+                <div class="relative pl-14">
+                    <div class="absolute left-0 top-2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600">
+                        <i data-lucide="file-plus" class="w-5 h-5 text-white"></i>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm rounded-xl p-5 border border-white/10">
+                        <div class="mb-3">
+                            <span class="text-white font-semibold text-lg">Application Submitted</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                            <span class="flex items-center">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-1.5"></i>
+                                {{ application.created_at|datetime('%b %d, %Y at %I:%M %p') }}
+                            </span>
+                            <span class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center mr-1.5">
+                                    <span class="text-white text-xs font-semibold">{{ application.applicant.username[0]|upper }}</span>
+                                </div>
+                                <span class="text-white">{{ application.applicant.username }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+">
+                        </div>
+                        <p class="text-sm font-medium text-white">
+                            {% if history.old_status %}
+                            {{ history.old_status|title }} → {{ history.new_status|title }}
+                            {% else %}
+                            Application Submitted
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            {{ history.created_at|datetime('%b %d, %Y at %I:%M %p') }}
+                        </p>
+                        {% if history.changed_by %}
+                        <p class="text-xs text-gray-500">by {{ history.changed_by.username }}</p>
+                        {% endif %}
+                        {% if history.reason %}
+                        <p class="text-xs text-red-400 mt-1">Reason: {{ history.reason }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

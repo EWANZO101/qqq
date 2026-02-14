@@ -1,0 +1,138 @@
+{% extends "layouts/base.html" %}
+{% block title %}Profile - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="mb-8">
+        <h1 class="font-display text-3xl font-bold text-white mb-2">Profile</h1>
+        <p class="text-gray-400">Manage your account and view your in-game stats</p>
+    </div>
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-1 mb-8 bg-surface-800/60 rounded-xl p-1 w-fit">
+        <button onclick="switchTab('profile')" id="tab-profile" class="tab-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-primary-600 text-white"><i data-lucide="user" class="w-4 h-4 inline mr-1"></i>Profile</button>
+        <button onclick="switchTab('stats')" id="tab-stats" class="tab-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5"><i data-lucide="swords" class="w-4 h-4 inline mr-1"></i>Stats</button>
+        <button onclick="switchTab('playtime')" id="tab-playtime" class="tab-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5"><i data-lucide="clock" class="w-4 h-4 inline mr-1"></i>Playtime</button>
+        <button onclick="switchTab('character')" id="tab-character" class="tab-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5"><i data-lucide="id-card" class="w-4 h-4 inline mr-1"></i>Character</button>
+        <button onclick="switchTab('password')" id="tab-password" class="tab-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5"><i data-lucide="lock" class="w-4 h-4 inline mr-1"></i>Password</button>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <div class="glass-card rounded-2xl p-6 gradient-border">
+                <div class="text-center">
+                    <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl font-bold text-white">{{ current_user.username[0].upper() }}</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-1">{{ current_user.username }}</h2>
+                    <p class="text-gray-400 text-sm mb-4">{{ current_user.email }}</p>
+                    {% if current_user.role %}<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-300 border border-primary-500/30">{{ current_user.role.name }}</span>{% endif %}
+                </div>
+                <hr class="my-6 border-white/10">
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-center justify-between"><span class="text-gray-400">Member since</span><span class="text-white">{{ current_user.created_at|date }}</span></div>
+                    {% if current_user.discord_id %}<div class="flex items-center justify-between"><span class="text-gray-400">Discord ID</span><span class="text-white font-mono text-xs">{{ current_user.discord_id }}</span></div>{% endif %}
+                    <div class="flex items-center justify-between"><span class="text-gray-400">In-Game</span><span class="text-gray-500 text-xs" id="sidebar-status">--</span></div>
+                    <div class="flex items-center justify-between"><span class="text-gray-400">K/D Ratio</span><span class="text-white text-xs font-semibold" id="sidebar-kd">--</span></div>
+                </div>
+            </div>
+        </div>
+        <!-- Panels -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- PROFILE -->
+            <div id="panel-profile" class="tab-panel space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4"><i data-lucide="user" class="w-5 h-5 inline mr-2 text-primary-400"></i>Profile Information</h3>
+                    <form method="POST" action="{{ url_for('auth.profile') }}" class="space-y-4">
+                        <input type="hidden" name="action" value="update_profile">
+                        <div><label class="block text-sm font-medium text-gray-300 mb-2">Username</label><input type="text" disabled value="{{ current_user.username }}" class="w-full px-4 py-3 bg-surface-700/50 border border-white/5 rounded-xl text-gray-400 cursor-not-allowed"></div>
+                        <div><label class="block text-sm font-medium text-gray-300 mb-2">Email</label><input type="email" disabled value="{{ current_user.email }}" class="w-full px-4 py-3 bg-surface-700/50 border border-white/5 rounded-xl text-gray-400 cursor-not-allowed"></div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Discord User ID {% if current_user.discord_id_locked %}<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-300 border border-green-500/30"><i data-lucide="lock" class="w-3 h-3 mr-1"></i>Locked</span>{% endif %}</label>
+                            {% if current_user.discord_id_locked %}
+                            <input type="text" disabled value="{{ current_user.discord_id or '' }}" class="w-full px-4 py-3 bg-surface-700/50 border border-green-500/20 rounded-xl text-green-300 cursor-not-allowed font-mono">
+                            {% else %}
+                            <input type="text" name="discord_id" value="{{ current_user.discord_id or '' }}" class="w-full px-4 py-3 bg-surface-700 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all" placeholder="Your Discord User ID">
+                            {% endif %}
+                        </div>
+                        {% if not current_user.discord_id_locked %}<button type="submit" class="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-medium rounded-xl transition-colors">Save Changes</button>{% endif %}
+                    </form>
+                </div>
+            </div>
+            <!-- STATS -->
+            <div id="panel-stats" class="tab-panel space-y-6 hidden">
+                {% if not current_user.discord_id %}
+                <div class="glass-card rounded-2xl p-8 text-center"><i data-lucide="link" class="w-12 h-12 text-gray-500 mx-auto mb-4"></i><h3 class="text-lg font-semibold text-white mb-2">Discord ID Required</h3><p class="text-gray-400">Link your Discord ID to view combat stats.</p></div>
+                {% else %}
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Kills</div><div class="text-3xl font-bold text-red-400" id="st-kills">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Deaths</div><div class="text-3xl font-bold text-gray-300" id="st-deaths">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center gradient-border"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">K/D Ratio</div><div class="text-3xl font-bold text-primary-400" id="st-kd">--</div></div>
+                </div>
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4"><i data-lucide="bar-chart-3" class="w-5 h-5 inline mr-2 text-primary-400"></i>Stats Breakdown</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center text-sm">
+                        <div class="bg-surface-800/50 rounded-xl p-4"><div class="text-gray-500 mb-2">Today</div><div class="text-green-400 font-semibold"><span id="st-today-k">0</span> kills</div><div class="text-red-400 text-xs"><span id="st-today-d">0</span> deaths</div></div>
+                        <div class="bg-surface-800/50 rounded-xl p-4"><div class="text-gray-500 mb-2">This Week</div><div class="text-green-400 font-semibold"><span id="st-week-k">0</span> kills</div><div class="text-red-400 text-xs"><span id="st-week-d">0</span> deaths</div></div>
+                        <div class="bg-surface-800/50 rounded-xl p-4"><div class="text-gray-500 mb-2">This Month</div><div class="text-green-400 font-semibold"><span id="st-month-k">0</span> kills</div><div class="text-red-400 text-xs"><span id="st-month-d">0</span> deaths</div></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card rounded-2xl p-6"><h4 class="text-sm font-semibold text-white mb-3"><i data-lucide="crosshair" class="w-4 h-4 inline mr-1 text-red-400"></i>Top Weapons</h4><div id="st-weapons" class="space-y-2 text-sm text-gray-400"><p class="text-gray-600">No data yet</p></div></div>
+                    <div class="glass-card rounded-2xl p-6"><h4 class="text-sm font-semibold text-white mb-3"><i data-lucide="skull" class="w-4 h-4 inline mr-1 text-gray-400"></i>Top Death Causes</h4><div id="st-causes" class="space-y-2 text-sm text-gray-400"><p class="text-gray-600">No data yet</p></div></div>
+                </div>
+                <div class="glass-card rounded-2xl p-6"><h4 class="text-sm font-semibold text-white mb-3"><i data-lucide="activity" class="w-4 h-4 inline mr-1 text-primary-400"></i>Recent Activity</h4><div id="st-recent" class="space-y-2 text-sm max-h-80 overflow-y-auto"><p class="text-gray-600">No events recorded yet</p></div></div>
+                {% endif %}
+            </div>
+            <!-- PLAYTIME -->
+            <div id="panel-playtime" class="tab-panel space-y-6 hidden">
+                {% if not current_user.discord_id %}
+                <div class="glass-card rounded-2xl p-8 text-center"><i data-lucide="link" class="w-12 h-12 text-gray-500 mx-auto mb-4"></i><h3 class="text-lg font-semibold text-white mb-2">Discord ID Required</h3><p class="text-gray-400">Link your Discord ID to view playtime.</p></div>
+                {% else %}
+                <div id="server-status-banner" class="glass-card rounded-2xl p-4"><div class="flex items-center justify-between"><div class="flex items-center space-x-3"><div id="status-dot" class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div><span id="status-text" class="text-gray-400 text-sm">Checking...</span></div><span id="player-session" class="text-sm text-gray-500"></span></div></div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="glass-card rounded-xl p-5 text-center" id="stat-session"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Current Session</div><div class="text-2xl font-bold text-primary-400" id="pt-session">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Today</div><div class="text-2xl font-bold text-white" id="pt-today">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">This Week</div><div class="text-2xl font-bold text-white" id="pt-week">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">This Month</div><div class="text-2xl font-bold text-white" id="pt-month">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">This Year</div><div class="text-2xl font-bold text-white" id="pt-year">--</div></div>
+                    <div class="glass-card rounded-xl p-5 text-center gradient-border"><div class="text-xs uppercase tracking-wider text-gray-500 mb-2">All Time</div><div class="text-2xl font-bold text-purple-400" id="pt-total">--</div></div>
+                </div>
+                <div class="glass-card rounded-xl p-4"><div class="flex items-center justify-between text-sm"><span class="text-gray-400">Last seen on server</span><span class="text-white" id="pt-lastseen">--</span></div></div>
+                <!-- Session History -->
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white"><i data-lucide="log-out" class="w-5 h-5 inline mr-2 text-orange-400"></i>Session History</h3>
+                        <div class="flex items-center space-x-2" id="session-categories"></div>
+                    </div>
+                    <div id="session-history" class="space-y-2 max-h-[400px] overflow-y-auto">
+                        <p class="text-gray-600 text-sm">Loading...</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <!-- CHARACTER -->
+            <div id="panel-character" class="tab-panel space-y-6 hidden">
+                {% if not current_user.discord_id %}
+                <div class="glass-card rounded-2xl p-8 text-center"><i data-lucide="link" class="w-12 h-12 text-gray-500 mx-auto mb-4"></i><h3 class="text-lg font-semibold text-white mb-2">Discord ID Required</h3><p class="text-gray-400">Link your Discord ID to view character info.</p></div>
+                {% else %}
+                <div id="char-loading" class="glass-card rounded-2xl p-8 text-center"><div class="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div><p class="text-gray-400">Loading character data...</p></div>
+                <div id="char-container" class="space-y-4 hidden"></div>
+                {% endif %}
+            </div>
+            <!-- PASSWORD -->
+            <div id="panel-password" class="tab-panel space-y-6 hidden">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4"><i data-lucide="lock" class="w-5 h-5 inline mr-2 text-primary-400"></i>Change Password</h3>
+                    <form method="POST" action="{{ url_for('auth.profile') }}" class="space-y-4">
+                        <input type="hidden" name="action" value="change_password">
+                        <div><label class="block text-sm font-medium text-gray-300 mb-2">Current Password</label><input type="password" name="current_password" required class="w-full px-4 py-3 bg-surface-700 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all" placeholder="••••••••"></div>
+                        <div><label class="block text-sm font-medium text-gray-300 mb-2">New Password</label><input type="password" name="new_password" required minlength="8" class="w-full px-4 py-3 bg-surface-700 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all" placeholder="••••••••"></div>
+                        <div><label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label><input type="password" name="confirm_new_password" required class="w-full px-4 py-3 bg-surface-700 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all" placeholder="••••••••"></div>
+                        <button type="submit" class="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-medium rounded-xl transition-colors">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{{ url_for('static', filename='js/profile.js') }}"></script>{% endblock %}

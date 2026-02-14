@@ -1,0 +1,55 @@
+{% extends "layouts/base.html" %}
+{% block title %}Media Gallery{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Media Gallery</h1>
+            <p class="text-gray-400">Manage homepage media content</p>
+        </div>
+        <a href="{{ url_for('admin.media_upload') }}" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-purple-600 text-white font-semibold inline-flex items-center">
+            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>Upload Media
+        </a>
+    </div>
+
+    {% if media_items %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for media in media_items %}
+        <div class="glass-card rounded-2xl overflow-hidden">
+            <div class="aspect-video bg-surface-800 relative">
+                {% if media.media_type == 'image' and media.file_path %}
+                <img src="{{ media.file_path }}" alt="{{ media.title }}" class="w-full h-full object-cover">
+                {% elif media.media_type == 'video' and media.file_path %}
+                <video src="{{ media.file_path }}" class="w-full h-full object-cover"></video>
+                {% else %}
+                <div class="flex items-center justify-center h-full">
+                    <i data-lucide="image" class="w-12 h-12 text-gray-600"></i>
+                </div>
+                {% endif %}
+                {% if not media.is_published %}
+                <span class="absolute top-2 left-2 px-2 py-1 rounded bg-red-500 text-white text-xs">Hidden</span>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                <h3 class="text-white font-semibold mb-2">{{ media.title }}</h3>
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('admin.media_edit', id=media.id) }}" class="px-3 py-1 rounded bg-blue-900/50 text-blue-300 text-sm">Edit</a>
+                    <form method="POST" action="{{ url_for('admin.media_delete', id=media.id) }}" onsubmit="return confirm('Delete?')" class="inline">
+                        <button class="px-3 py-1 rounded bg-red-900/50 text-red-300 text-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-card rounded-2xl p-12 text-center">
+        <i data-lucide="image" class="w-16 h-16 text-gray-600 mx-auto mb-4"></i>
+        <p class="text-gray-400 mb-6">No media uploaded yet</p>
+        <a href="{{ url_for('admin.media_upload') }}" class="px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold inline-flex items-center">
+            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>Upload Media
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

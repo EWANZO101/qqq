@@ -1,0 +1,151 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Create Role - Admin - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('admin.roles_list') }}" 
+           class="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-4">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Roles
+        </a>
+        
+        <div class="flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                <i data-lucide="plus" class="w-7 h-7 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-display text-2xl font-bold text-white">Create Role</h1>
+                <p class="text-gray-400">Define a new role with custom permissions</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Form -->
+    <form method="POST" class="space-y-6">
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="tag" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Role Details
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
+                        Role Name <span class="text-red-400">*</span>
+                    </label>
+                    <input type="text" id="name" name="name" required
+                           placeholder="e.g., Moderator, Reviewer, Support"
+                           class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                </div>
+                
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-300 mb-2">
+                        Description
+                    </label>
+                    <textarea id="description" name="description" rows="2"
+                              placeholder="Brief description of this role's purpose..."
+                              class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                        <div>
+                            <p class="text-white font-medium">Default Role</p>
+                            <p class="text-xs text-gray-400">Assign to new users automatically</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_default" class="sr-only peer">
+                            <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                        <div>
+                            <p class="text-white font-medium">Administrator</p>
+                            <p class="text-xs text-gray-400">Full system access</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_admin" class="sr-only peer">
+                            <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="key" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Permissions
+            </h2>
+            
+            <div class="space-y-3">
+                {% for perm, description in all_permissions.items() %}
+                <div class="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                    <div>
+                        <p class="text-white font-medium">{{ perm|replace('_', ' ')|title }}</p>
+                        <p class="text-xs text-gray-400">{{ description }}</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="perm_{{ perm }}" class="sr-only peer">
+                        <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Department Access -->
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="clipboard" class="w-5 h-5 mr-2 text-green-400"></i>
+                Department Access
+            </h2>
+            <p class="text-sm text-gray-400 mb-4">
+                Select which application departments this role can view and review.
+                If none selected, access falls back to the general "View Applications" permission.
+            </p>
+            
+            <div class="space-y-2">
+                {% for at in app_types %}
+                <label class="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                            <i data-lucide="{{ at.icon or 'clipboard' }}" class="w-4 h-4 text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">{{ at.name }}</p>
+                            <p class="text-xs text-gray-500">{{ at.applications.count() }} applications</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="dept_access" value="{{ at.id }}" class="sr-only peer">
+                        <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </label>
+                {% endfor %}
+            </div>
+            
+            {% if not app_types %}
+            <p class="text-gray-600 text-sm">No application types configured yet.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <a href="{{ url_for('admin.roles_list') }}" 
+               class="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-medium transition-colors text-center">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-8 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-400 hover:to-purple-500 text-white font-semibold transition-all duration-300 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40">
+                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                Create Role
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

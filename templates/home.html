@@ -1,0 +1,158 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Home - {{ site_name }}{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <!-- Logo/Icon -->
+        <div class="mb-8 animate-fade-in">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary-500/50">
+                <i data-lucide="file-text" class="w-12 h-12 text-white"></i>
+            </div>
+            <h1 class="font-display text-5xl md:text-7xl font-bold text-white mb-4 bg-gradient-to-r from-primary-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                {{ site_name }}
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto">
+                Your gateway to joining our community. Submit applications, track your progress, and get instant updates.
+            </p>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in" style="animation-delay: 0.2s;">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-400 hover:to-purple-500 text-white font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 inline-flex items-center justify-center">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-2"></i>
+                    Go to Dashboard
+                </a>
+                <a href="{{ url_for('applications.list') }}" class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition-all border border-white/10 hover:border-white/20 inline-flex items-center justify-center">
+                    <i data-lucide="file-plus" class="w-5 h-5 mr-2"></i>
+                    New Application
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.signup') }}" class="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-400 hover:to-purple-500 text-white font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 inline-flex items-center justify-center">
+                    <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
+                    Get Started
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition-all border border-white/10 hover:border-white/20 inline-flex items-center justify-center">
+                    <i data-lucide="log-in" class="w-5 h-5 mr-2"></i>
+                    Sign In
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Stats for logged-in users -->
+        {% if current_user.is_authenticated and stats %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-16 animate-fade-in" style="animation-delay: 0.4s;">
+            <div class="glass-card rounded-2xl p-6">
+                <div class="text-3xl font-bold text-white mb-2">{{ stats.total_applications }}</div>
+                <div class="text-gray-400 text-sm">Total Applications</div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="text-3xl font-bold text-yellow-400 mb-2">{{ stats.pending }}</div>
+                <div class="text-gray-400 text-sm">Pending Review</div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="text-3xl font-bold text-green-400 mb-2">{{ stats.accepted }}</div>
+                <div class="text-gray-400 text-sm">Accepted</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Application Types Section -->
+{% if app_types %}
+<div class="py-20 bg-gradient-to-b from-transparent to-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-3xl md:text-4xl font-bold text-white mb-4">Available Applications</h2>
+            <p class="text-gray-400 text-lg">Choose the application type that fits your needs</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for app_type in app_types %}
+            <a href="{{ url_for('applications.submit', slug=app_type.slug) }}" class="glass-card rounded-2xl p-8 hover:scale-105 transition-all duration-300 group">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-primary-500/50 transition-shadow">
+                    <i data-lucide="{{ app_type.icon }}" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="font-semibold text-xl text-white mb-3 group-hover:text-primary-400 transition-colors">
+                    {{ app_type.name }}
+                </h3>
+                {% if app_type.description %}
+                <p class="text-gray-400 text-sm mb-4">{{ app_type.description }}</p>
+                {% endif %}
+                <div class="flex items-center text-primary-400 text-sm font-medium">
+                    Apply Now
+                    <i data-lucide="arrow-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Features Section -->
+<div class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-3xl md:text-4xl font-bold text-white mb-4">Why Use Our Platform?</h2>
+            <p class="text-gray-400 text-lg">Simple, fast, and transparent application process</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-8">
+                <div class="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="zap" class="w-8 h-8 text-green-400"></i>
+                </div>
+                <h3 class="font-semibold text-xl text-white mb-3">Fast Processing</h3>
+                <p class="text-gray-400">Get your application reviewed quickly by our team</p>
+            </div>
+            
+            <div class="text-center p-8">
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="bell" class="w-8 h-8 text-blue-400"></i>
+                </div>
+                <h3 class="font-semibold text-xl text-white mb-3">Instant Notifications</h3>
+                <p class="text-gray-400">Get notified immediately when your status changes</p>
+            </div>
+            
+            <div class="text-center p-8">
+                <div class="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-purple-400"></i>
+                </div>
+                <h3 class="font-semibold text-xl text-white mb-3">Secure & Private</h3>
+                <p class="text-gray-400">Your information is safe and encrypted</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add fade-in animation -->
+<style>
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+    opacity: 0;
+}
+</style>
+{% endblock %}

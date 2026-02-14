@@ -1,0 +1,152 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Application #{{ application.id }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('main.dashboard') }}" class="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-4">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Dashboard
+        </a>
+        
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-4">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                    {% if application.app_type.icon == 'shield-check' %}
+                        <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+                    {% elif application.app_type.icon == 'fire' %}
+                        <i data-lucide="flame" class="w-7 h-7 text-white"></i>
+                    {% elif application.app_type.icon == 'heart' %}
+                        <i data-lucide="heart-pulse" class="w-7 h-7 text-white"></i>
+                    {% elif application.app_type.icon == 'phone' %}
+                        <i data-lucide="radio" class="w-7 h-7 text-white"></i>
+                    {% else %}
+                        <i data-lucide="clipboard" class="w-7 h-7 text-white"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="font-display text-2xl font-bold text-white">{{ application.app_type.name }} Application</h1>
+                    <p class="text-gray-400">Application #{{ application.id }}</p>
+                </div>
+            </div>
+            
+            <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium border {{ application.status_badge_class }}">
+                {% if application.status == 'pending' %}
+                    <span class="w-2 h-2 rounded-full bg-yellow-400 mr-2 status-pulse"></span>
+                {% elif application.status == 'accepted' %}
+                    <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                {% else %}
+                    <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                {% endif %}
+                {{ application.status|title }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Application Details -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-4 flex items-center">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-2 text-primary-400"></i>
+                    Application Details
+                </h2>
+                
+                <dl class="space-y-4">
+                    {% for field in form_fields %}
+                    <div class="border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                        <dt class="text-sm font-medium text-gray-400 mb-1">{{ field.label }}</dt>
+                        <dd class="text-white">
+                            {% if form_data.get(field.name) %}
+                                {% if field.type == 'textarea' %}
+                                    <p class="whitespace-pre-wrap">{{ form_data.get(field.name) }}</p>
+                                {% else %}
+                                    {{ form_data.get(field.name) }}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-500 italic">Not provided</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            
+            <!-- Denial Reason (if denied) -->
+            {% if application.status == 'denied' and application.denial_reason %}
+            <div class="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-900/10">
+                <h2 class="font-semibold text-red-400 mb-3 flex items-center">
+                    <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                    Denial Reason
+                </h2>
+                <p class="text-gray-300">{{ application.denial_reason }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Status Info -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-4">Application Info</h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Submitted</dt>
+                        <dd class="text-white">{{ application.created_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Last Updated</dt>
+                        <dd class="text-white">{{ application.updated_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    {% if application.reviewed_at %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Reviewed</dt>
+                        <dd class="text-white">{{ application.reviewed_at|datetime('%b %d, %Y') }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if application.reviewer %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Reviewed By</dt>
+                        <dd class="text-white">{{ application.reviewer.username }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+            
+            <!-- Status History -->
+            {% if status_history %}
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="font-semibold text-white mb-4">Status History</h2>
+                <div class="space-y-4">
+                    {% for history in status_history %}
+                    <div class="relative pl-6 pb-4 last:pb-0 border-l border-white/10 last:border-0">
+                        <div class="absolute left-0 top-0 w-3 h-3 -translate-x-1.5 rounded-full 
+                            {% if history.new_status == 'pending' %}bg-yellow-500
+                            {% elif history.new_status == 'accepted' %}bg-green-500
+                            {% else %}bg-red-500{% endif %}">
+                        </div>
+                        <p class="text-sm font-medium text-white">
+                            {% if history.old_status %}
+                                {{ history.old_status|title }} → {{ history.new_status|title }}
+                            {% else %}
+                                Application Submitted
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            {{ history.created_at|datetime('%b %d, %Y at %I:%M %p') }}
+                        </p>
+                        {% if history.changed_by %}
+                        <p class="text-xs text-gray-500">by {{ history.changed_by.username }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Link Your Discord - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+            </svg>
+        </div>
+        <h1 class="font-display text-3xl font-bold text-white mb-3">Link Your Discord</h1>
+        <p class="text-gray-400 text-lg">Before you can continue, we need your Discord User ID to connect your account.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="glass-card rounded-2xl p-8 gradient-border">
+        <form method="POST" action="{{ url_for('auth.setup_discord') }}" class="space-y-6">
+            
+            <!-- Discord ID Input -->
+            <div>
+                <label for="discord_id" class="block text-sm font-semibold text-white mb-2">
+                    Your Discord User ID <span class="text-red-400">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="discord_id" 
+                    name="discord_id"
+                    value="{{ discord_id or '' }}"
+                    required
+                    pattern="[0-9]{17,20}"
+                    autofocus
+                    class="w-full px-4 py-3 bg-surface-700 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-lg"
+                    placeholder="e.g. 123456789012345678">
+            </div>
+
+            <!-- Step-by-step Guide -->
+            <div class="bg-surface-800/80 rounded-xl p-5 border border-white/5">
+                <div class="flex items-start space-x-3">
+                    <i data-lucide="info" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-white mb-3">How to find your Discord User ID:</p>
+                        <ol class="text-sm text-gray-400 space-y-2 list-none">
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">1</span>
+                                <span>Open <span class="text-white font-medium">Discord</span> and click the <span class="text-white font-medium">⚙️ Settings</span> icon at the bottom left (next to your profile picture)</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">2</span>
+                                <span>Scroll down in the left sidebar and click on <span class="text-white font-medium">Advanced</span></span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">3</span>
+                                <span>Toggle on <span class="text-indigo-400 font-semibold">Developer Mode</span></span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">4</span>
+                                <span>Close Settings and go back to Discord</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">5</span>
+                                <span>Click on your <span class="text-white font-medium">profile icon</span> at the bottom left</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">6</span>
+                                <span>Click <span class="text-indigo-400 font-semibold">Copy User ID</span></span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">7</span>
+                                <span>Paste the ID into the field above and click <span class="text-white font-medium">Continue</span></span>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="bg-yellow-900/20 rounded-xl p-4 border border-yellow-500/20">
+                <div class="flex items-start space-x-3">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5"></i>
+                    <p class="text-sm text-yellow-300/80">
+                        Your Discord ID will be permanently linked to your account. Make sure you enter the correct ID.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="w-full px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all btn-glow flex items-center justify-center space-x-2 text-lg">
+                <i data-lucide="link" class="w-5 h-5"></i>
+                <span>Link Discord & Continue</span>
+            </button>
+        </form>
+
+        <!-- Logout option -->
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('auth.logout') }}" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                Sign out instead
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

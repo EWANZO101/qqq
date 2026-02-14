@@ -1,0 +1,165 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Admin Dashboard - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Header -->
+    <div class="mb-5">
+        <h1 class="font-display text-2xl font-bold text-white">Admin Dashboard</h1>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-4 gap-3 mb-5">
+        <div class="glass-card rounded-xl px-4 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-primary-500/15 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="file-stack" class="w-4 h-4 text-primary-400"></i>
+            </div>
+            <div>
+                <p class="text-lg font-bold text-white leading-none">{{ total_applications }}</p>
+                <p class="text-[11px] text-gray-500 mt-0.5">Total</p>
+            </div>
+        </div>
+        <a href="{{ url_for('admin.applications_list', status='pending') }}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:border-yellow-500/20 transition-colors">
+            <div class="w-9 h-9 rounded-lg bg-yellow-500/15 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="clock" class="w-4 h-4 text-yellow-400"></i>
+            </div>
+            <div>
+                <p class="text-lg font-bold text-yellow-400 leading-none">{{ pending_applications }}</p>
+                <p class="text-[11px] text-yellow-500/60 mt-0.5">Pending</p>
+            </div>
+        </a>
+        <div class="glass-card rounded-xl px-4 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
+            </div>
+            <div>
+                <p class="text-lg font-bold text-green-400 leading-none">{{ accepted_applications }}</p>
+                <p class="text-[11px] text-green-500/60 mt-0.5">Accepted</p>
+            </div>
+        </div>
+        <div class="glass-card rounded-xl px-4 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-purple-500/15 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+            </div>
+            <div>
+                <p class="text-lg font-bold text-white leading-none">{{ total_users }}</p>
+                <p class="text-[11px] text-gray-500 mt-0.5">{{ active_users }} active</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments full width -->
+    <div class="mb-5">
+        <div class="flex items-center justify-between mb-2.5">
+            <h2 class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Departments</h2>
+            <a href="{{ url_for('admin.application_types') }}" class="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Configure →</a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
+            {% for stat in app_type_stats %}
+            <a href="{{ url_for('admin.applications_by_type', slug=stat.type.slug) }}" 
+               class="group relative glass-card rounded-xl p-3.5 hover:border-primary-500/20 transition-all duration-200 hover:-translate-y-0.5">
+                {% if stat.pending > 0 %}
+                <div class="absolute top-2 right-2">
+                    <span class="relative flex h-4.5 w-4.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-25"></span>
+                        <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-yellow-500/20 text-yellow-400 text-[9px] font-bold leading-none">{{ stat.pending }}</span>
+                    </span>
+                </div>
+                {% endif %}
+                <div class="w-8 h-8 rounded-md bg-white/5 flex items-center justify-center mb-2 group-hover:bg-white/10 transition-colors">
+                    <i data-lucide="{{ stat.type.icon }}" class="w-3.5 h-3.5 text-primary-400"></i>
+                </div>
+                <p class="text-white text-xs font-medium truncate pr-4">{{ stat.type.name }}</p>
+                <p class="text-gray-600 text-[10px] mt-0.5">{{ stat.total }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Apps + Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        <!-- Recent Applications -->
+        <div class="lg:col-span-2 glass-card rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5">
+                <h2 class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Recent Applications</h2>
+                <a href="{{ url_for('admin.applications_list') }}" class="text-[11px] text-primary-400 hover:text-primary-300 transition-colors">View all →</a>
+            </div>
+            {% if recent_apps %}
+            <div class="divide-y divide-white/[0.04]">
+                {% for app in recent_apps %}
+                <a href="{{ url_for('admin.review_application', id=app.id) }}" 
+                   class="flex items-center gap-2.5 px-4 py-2 hover:bg-white/[0.02] transition-colors group">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500/70 to-purple-600/70 flex items-center justify-center flex-shrink-0">
+                        <span class="text-white text-[9px] font-bold">{{ app.applicant.username[0]|upper }}</span>
+                    </div>
+                    <span class="text-white text-sm font-medium truncate flex-1">{{ app.applicant.username }}</span>
+                    <span class="text-gray-600 text-xs truncate max-w-[100px]">{{ app.app_type.name }}</span>
+                    {% if app.status == 'pending' %}
+                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0"></span>
+                    {% elif app.status == 'accepted' %}
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span>
+                    {% else %}
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
+                    {% endif %}
+                    <span class="text-gray-700 text-[11px] flex-shrink-0">{{ app.created_at|datetime('%b %d') }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-10">
+                <p class="text-gray-600 text-sm">No applications yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation -->
+        <div class="glass-card rounded-xl overflow-hidden">
+            <div class="divide-y divide-white/[0.04]">
+                <a href="{{ url_for('admin.analytics') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-green-400/70"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Server Analytics</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="users" class="w-4 h-4 text-purple-400/70"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Users</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.roles_list') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="shield" class="w-4 h-4 text-blue-400/70"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Roles</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.media_list') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="image" class="w-4 h-4 text-pink-400/70"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Media</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.settings_general') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="settings" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">General Settings</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.settings_email') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="mail" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Email Settings</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.settings_security') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="lock" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Security</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('admin.settings_features') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors group">
+                    <i data-lucide="toggle-right" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-sm text-gray-300 group-hover:text-white transition-colors flex-1">Feature Toggles</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-700"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Edit User - Admin - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="{{ url_for('admin.users_list') }}" 
+           class="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-4">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Users
+        </a>
+        
+        <div class="flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                <span class="text-white font-bold text-xl">{{ user.username[0]|upper }}</span>
+            </div>
+            <div>
+                <h1 class="font-display text-2xl font-bold text-white">Edit User</h1>
+                <p class="text-gray-400">{{ user.username }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Form -->
+    <form method="POST" class="space-y-6">
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="user" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Account Details
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                        Username <span class="text-red-400">*</span>
+                    </label>
+                    <input type="text" id="username" name="username" value="{{ user.username }}" required
+                           class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+                        Email <span class="text-red-400">*</span>
+                    </label>
+                    <input type="email" id="email" name="email" value="{{ user.email }}" required
+                           class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                </div>
+                
+                <div>
+                    <label for="discord_id" class="block text-sm font-medium text-gray-300 mb-2">
+                        Discord ID
+                    </label>
+                    <input type="text" id="discord_id" name="discord_id" value="{{ user.discord_id or '' }}"
+                           placeholder="e.g., 123456789012345678"
+                           class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="shield" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Role & Permissions
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="role_id" class="block text-sm font-medium text-gray-300 mb-2">
+                        Role
+                    </label>
+                    <select id="role_id" name="role_id"
+                            class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                        <option value="">No Role</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}" {% if user.role_id == role.id %}selected{% endif %}>
+                            {{ role.name }}{% if role.is_admin %} (Admin){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                    <div>
+                        <p class="text-white font-medium">Account Active</p>
+                        <p class="text-sm text-gray-400">User can log in and access the system</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" class="sr-only peer" {% if user.is_active %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-6 flex items-center">
+                <i data-lucide="lock" class="w-5 h-5 mr-2 text-primary-400"></i>
+                Change Password
+            </h2>
+            <p class="text-sm text-gray-400 mb-4">Leave blank to keep the current password.</p>
+            
+            <div>
+                <label for="new_password" class="block text-sm font-medium text-gray-300 mb-2">
+                    New Password
+                </label>
+                <input type="password" id="new_password" name="new_password"
+                       placeholder="Enter new password"
+                       class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors">
+                <p class="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="font-semibold text-white mb-4 flex items-center">
+                <i data-lucide="bar-chart" class="w-5 h-5 mr-2 text-primary-400"></i>
+                User Statistics
+            </h2>
+            <dl class="grid grid-cols-2 gap-4 text-sm">
+                <div class="p-3 rounded-xl bg-white/5">
+                    <dt class="text-gray-400">Joined</dt>
+                    <dd class="text-white font-medium mt-1">{{ user.created_at|datetime('%b %d, %Y') }}</dd>
+                </div>
+                <div class="p-3 rounded-xl bg-white/5">
+                    <dt class="text-gray-400">Applications</dt>
+                    <dd class="text-white font-medium mt-1">{{ user.applications.count() }}</dd>
+                </div>
+            </dl>
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <a href="{{ url_for('admin.users_list') }}" 
+               class="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-medium transition-colors text-center">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-8 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-400 hover:to-purple-500 text-white font-semibold transition-all duration-300 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40">
+                <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

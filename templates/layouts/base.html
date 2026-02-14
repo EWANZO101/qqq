@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        surface: {
+                            900: '#0f0f14',
+                            800: '#16161d',
+                            700: '#1e1e27',
+                            600: '#272731',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Flowbite CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f14 0%, #16161d 50%, #0f0f14 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(22, 22, 29, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .gradient-border {
+            position: relative;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            padding: 1px;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(139, 92, 246, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #0ea5e9, #8b5cf6);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+        
+        .btn-glow {
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .btn-glow:hover {
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+        }
+        
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #16161d;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #272731;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b3b4f;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="font-sans text-gray-200 antialiased">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-card border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="{{ url_for('main.index') }}" class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="font-display font-bold text-xl text-white">{{ site_name }}</span>
+                </a>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.dashboard') }}" class="nav-link text-gray-300 hover:text-white transition-colors {% if request.endpoint == 'main.dashboard' %}active text-white{% endif %}">
+                            Dashboard
+                        </a>
+                        <a href="{{ url_for('applications.apply', slug='whitelist') }}" class="nav-link text-gray-300 hover:text-white transition-colors">
+                            Apply
+                        </a>
+                        {% if current_user.has_permission('view_admin_panel') or current_user.is_admin() %}
+                            <a href="{{ url_for('admin.dashboard') }}" class="nav-link text-gray-300 hover:text-white transition-colors {% if request.endpoint and request.endpoint.startswith('admin.') %}active text-white{% endif %}">
+                                Admin
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <div class="relative">
+                            <button type="button" id="user-menu-button" class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors" aria-expanded="false" data-dropdown-toggle="user-dropdown">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                                    <span class="text-sm font-semibold text-white">{{ current_user.username[0].upper() }}</span>
+                                </div>
+                                <span class="hidden sm:block text-sm font-medium text-gray-200">{{ current_user.username }}</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                            </button>
+                            
+                            <!-- Dropdown menu -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 glass-card rounded-xl shadow-xl py-2 border border-white/10">
+                                <a href="{{ url_for('auth.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i data-lucide="user" class="w-4 h-4 mr-3"></i>
+                                    Profile
+                                </a>
+                                <hr class="my-2 border-white/10">
+                                <a href="{{ url_for('auth.logout') }}" class="flex items-center px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors">
+                                    <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
+                                    Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">
+                            Sign In
+                        </a>
+                        <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-sm font-semibold rounded-lg transition-all btn-glow">
+                            Get Started
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Mobile menu button -->
+                    <button type="button" class="md:hidden p-2 rounded-lg hover:bg-white/5 transition-colors" data-collapse-toggle="mobile-menu">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/5">
+            <div class="px-4 py-3 space-y-2">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('main.dashboard') }}" class="block px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                        Dashboard
+                    </a>
+                    {% if current_user.has_permission('view_admin_panel') or current_user.is_admin() %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="block px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                            Admin Panel
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
+                {% for category, message in messages %}
+                    <div class="flex items-center p-4 rounded-xl glass-card border 
+                        {% if category == 'error' %}border-red-500/30 bg-red-900/20{% endif %}
+                        {% if category == 'success' %}border-green-500/30 bg-green-900/20{% endif %}
+                        {% if category == 'warning' %}border-yellow-500/30 bg-yellow-900/20{% endif %}
+                        {% if category == 'info' %}border-primary-500/30 bg-primary-900/20{% endif %}
+                        fade-in" role="alert">
+                        <div class="flex-shrink-0">
+                            {% if category == 'error' %}
+                                <i data-lucide="x-circle" class="w-5 h-5 text-red-400"></i>
+                            {% elif category == 'success' %}
+                                <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+                            {% elif category == 'warning' %}
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-400"></i>
+                            {% else %}
+                                <i data-lucide="info" class="w-5 h-5 text-primary-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3 text-sm font-medium text-gray-200">{{ message }}</div>
+                        <button type="button" class="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-lg hover:bg-white/10 transition-colors" onclick="this.parentElement.remove()">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="pt-16 min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                        <i data-lucide="clipboard-list" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <span class="font-display font-semibold text-gray-400">{{ site_name }}</span>
+                </div>
+                <p class="text-sm text-gray-500">
+                    &copy; 2024 {{ site_name }}. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Flowbite JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+        
+        // Auto-dismiss flash messages after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('[role="alert"]').forEach(el => {
+                el.style.transition = 'opacity 0.5s ease';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            });
+        }, 5000);
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

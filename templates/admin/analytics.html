@@ -1,0 +1,723 @@
+{% extends "layouts/base.html" %}
+{% block title %}Server Analytics - Admin - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-4"><i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>Back to Admin</a>
+        <h1 class="font-display text-3xl font-bold text-white">Server Analytics</h1>
+        <p class="text-gray-400 mt-1">Live player data, leaderboards, and server statistics</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex flex-wrap gap-2 mb-8 bg-surface-800/40 rounded-xl p-1.5">
+        <button onclick="showTab('overview')" id="tab-overview" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-1.5"></i>Overview
+        </button>
+        <button onclick="showTab('peak')" id="tab-peak" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all">
+            <i data-lucide="clock" class="w-4 h-4 inline mr-1.5"></i>Peak Hours
+        </button>
+        <button onclick="showTab('retention')" id="tab-retention" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all">
+            <i data-lucide="user-check" class="w-4 h-4 inline mr-1.5"></i>Retention
+        </button>
+        <button onclick="showTab('economy')" id="tab-economy" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all">
+            <i data-lucide="banknote" class="w-4 h-4 inline mr-1.5"></i>Economy
+        </button>
+        <button onclick="showTab('heatmap')" id="tab-heatmap" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all">
+            <i data-lucide="map-pin" class="w-4 h-4 inline mr-1.5"></i>Death Heatmap
+        </button>
+        <button onclick="showTab('sessions')" id="tab-sessions" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all">
+            <i data-lucide="log-out" class="w-4 h-4 inline mr-1.5"></i>Session Log
+        </button>
+    </div>
+
+    <!-- ==================== OVERVIEW TAB ==================== -->
+    <div id="panel-overview" class="tab-panel">
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Online Now</div>
+                <div class="text-2xl font-bold text-green-400" id="ov-active">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Today</div>
+                <div class="text-2xl font-bold text-white" id="ov-today">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">This Week</div>
+                <div class="text-2xl font-bold text-white" id="ov-week">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">All Time</div>
+                <div class="text-2xl font-bold text-purple-400" id="ov-total">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Kills Today</div>
+                <div class="text-2xl font-bold text-red-400" id="ov-kills">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Deaths Today</div>
+                <div class="text-2xl font-bold text-gray-400" id="ov-deaths">--</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Active Players -->
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white"><i data-lucide="users" class="w-5 h-5 inline mr-2 text-green-400"></i>Live Players</h2>
+                    <span class="text-sm text-green-400 font-medium" id="live-count">0 online</span>
+                </div>
+                <input type="text" id="search-live" placeholder="Search players..." oninput="filterList('live-players', this.value)" class="w-full px-3 py-2 mb-3 bg-surface-800/60 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50">
+                <div id="live-players" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-600 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Playtime Leaderboard -->
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white"><i data-lucide="trophy" class="w-5 h-5 inline mr-2 text-yellow-400"></i>Playtime Leaderboard</h2>
+                    <div class="flex space-x-1 bg-surface-800/60 rounded-lg p-0.5">
+                        <button onclick="loadPlaytimeLB('today')" id="ptlb-today" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">Today</button>
+                        <button onclick="loadPlaytimeLB('week')" id="ptlb-week" class="px-3 py-1 text-xs rounded-md bg-primary-600 text-white">Week</button>
+                        <button onclick="loadPlaytimeLB('month')" id="ptlb-month" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">Month</button>
+                        <button onclick="loadPlaytimeLB('all')" id="ptlb-all" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">All</button>
+                    </div>
+                </div>
+                <input type="text" id="search-pt" placeholder="Search players..." oninput="filterList('pt-leaderboard', this.value)" class="w-full px-3 py-2 mb-3 bg-surface-800/60 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50">
+                <div id="pt-leaderboard" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-600 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Kill Leaderboard -->
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white"><i data-lucide="crosshair" class="w-5 h-5 inline mr-2 text-red-400"></i>Kill Leaderboard</h2>
+                    <div class="flex space-x-1 bg-surface-800/60 rounded-lg p-0.5">
+                        <button onclick="loadKillLB('today')" id="klb-today" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">Today</button>
+                        <button onclick="loadKillLB('week')" id="klb-week" class="px-3 py-1 text-xs rounded-md bg-primary-600 text-white">Week</button>
+                        <button onclick="loadKillLB('month')" id="klb-month" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">Month</button>
+                        <button onclick="loadKillLB('all')" id="klb-all" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">All</button>
+                    </div>
+                </div>
+                <input type="text" id="search-kill" placeholder="Search players..." oninput="filterList('kill-leaderboard', this.value)" class="w-full px-3 py-2 mb-3 bg-surface-800/60 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50">
+                <div id="kill-leaderboard" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-600 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Server Stats -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="bar-chart-3" class="w-5 h-5 inline mr-2 text-primary-400"></i>Server Summary</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-white/5"><span class="text-gray-400">Total Playtime Today</span><span class="text-white font-semibold" id="ov-pt-today">--</span></div>
+                    <div class="flex justify-between items-center py-2 border-b border-white/5"><span class="text-gray-400">Total Playtime This Week</span><span class="text-white font-semibold" id="ov-pt-week">--</span></div>
+                    <div class="flex justify-between items-center py-2 border-b border-white/5"><span class="text-gray-400">Kills This Week</span><span class="text-red-400 font-semibold" id="ov-kills-week">--</span></div>
+                    <div class="flex justify-between items-center py-2 border-b border-white/5"><span class="text-gray-400">Deaths This Week</span><span class="text-gray-300 font-semibold" id="ov-deaths-week">--</span></div>
+                    <div class="flex justify-between items-center py-2"><span class="text-gray-400">Unique Players (All Time)</span><span class="text-purple-400 font-semibold" id="ov-unique-total">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Kill Feed -->
+        <div class="mt-8">
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white"><i data-lucide="activity" class="w-5 h-5 inline mr-2 text-red-400"></i>Recent Kill Feed</h2>
+                    <span class="text-xs text-gray-500">Auto-refreshes every 30s</span>
+                </div>
+                <input type="text" id="search-feed" placeholder="Search by player name..." oninput="filterList('kill-feed', this.value)" class="w-full px-3 py-2 mb-3 bg-surface-800/60 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50">
+                <div id="kill-feed" class="space-y-2 max-h-[500px] overflow-y-auto">
+                    <p class="text-gray-600 text-sm">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PEAK HOURS TAB ==================== -->
+    <div id="panel-peak" class="tab-panel hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Peak Hour</div>
+                <div class="text-3xl font-bold text-primary-400" id="peak-hour">--</div>
+                <div class="text-sm text-gray-500 mt-1">avg <span id="peak-avg">--</span> players</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Best Day This Month</div>
+                <div class="text-3xl font-bold text-green-400" id="best-day">--</div>
+                <div class="text-sm text-gray-500 mt-1"><span id="best-day-count">--</span> unique players</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Avg Daily Players</div>
+                <div class="text-3xl font-bold text-yellow-400" id="avg-daily">--</div>
+                <div class="text-sm text-gray-500 mt-1">last 30 days</div>
+            </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="bar-chart-2" class="w-5 h-5 inline mr-2 text-primary-400"></i>Average Players by Hour (Last 7 Days)</h2>
+            <div style="height:300px;"><canvas id="chart-hourly"></canvas></div>
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="trending-up" class="w-5 h-5 inline mr-2 text-green-400"></i>Daily Unique Players (Last 30 Days)</h2>
+            <div style="height:300px;"><canvas id="chart-daily"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ==================== RETENTION TAB ==================== -->
+    <div id="panel-retention" class="tab-panel hidden">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">New Players Today</div>
+                <div class="text-3xl font-bold text-green-400" id="ret-new">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Returning Today</div>
+                <div class="text-3xl font-bold text-primary-400" id="ret-returning">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Unique Players</div>
+                <div class="text-3xl font-bold text-purple-400" id="ret-total">--</div>
+            </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h2 class="text-lg font-semibold text-white mb-6"><i data-lucide="filter" class="w-5 h-5 inline mr-2 text-yellow-400"></i>Player Retention Funnel</h2>
+            <div id="retention-funnel" class="space-y-4"><p class="text-gray-600 text-sm">Loading...</p></div>
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="pie-chart" class="w-5 h-5 inline mr-2 text-primary-400"></i>Retention Rate Over Time</h2>
+            <div style="height:300px;"><canvas id="chart-retention"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ==================== ECONOMY TAB ==================== -->
+    <div id="panel-economy" class="tab-panel hidden">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Cash</div>
+                <div class="text-2xl font-bold text-green-400" id="eco-cash">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Bank</div>
+                <div class="text-2xl font-bold text-primary-400" id="eco-bank">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">In Circulation</div>
+                <div class="text-2xl font-bold text-yellow-400" id="eco-total">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-2">Avg Wealth</div>
+                <div class="text-2xl font-bold text-white" id="eco-avg">--</div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="crown" class="w-5 h-5 inline mr-2 text-yellow-400"></i>Richest Players</h2>
+                <div id="richest-list" class="space-y-2 max-h-96 overflow-y-auto"><p class="text-gray-600 text-sm">Loading...</p></div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="pie-chart" class="w-5 h-5 inline mr-2 text-purple-400"></i>Wealth Distribution</h2>
+                <div style="height:280px;"><canvas id="chart-distribution"></canvas></div>
+            </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="trending-up" class="w-5 h-5 inline mr-2 text-green-400"></i>Economy Over Time (Last 7 Days)</h2>
+            <div style="height:300px;"><canvas id="chart-economy"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ==================== DEATH HEATMAP TAB ==================== -->
+    <div id="panel-heatmap" class="tab-panel hidden">
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-white"><i data-lucide="map-pin" class="w-5 h-5 inline mr-2 text-red-400"></i>Live Map</h2>
+                <div class="flex items-center space-x-3">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="show-players" checked onchange="refreshMap()" class="rounded bg-surface-800 border-white/20 text-green-500 focus:ring-green-500/30">
+                        <span class="text-sm text-green-400">Live Players</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="show-deaths" checked onchange="refreshMap()" class="rounded bg-surface-800 border-white/20 text-red-500 focus:ring-red-500/30">
+                        <span class="text-sm text-red-400">Deaths</span>
+                    </label>
+                    <div class="flex space-x-1 bg-surface-800/60 rounded-lg p-0.5 ml-2">
+                        <button onclick="loadHeatmap(1)" id="hm-1" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">24h</button>
+                        <button onclick="loadHeatmap(7)" id="hm-7" class="px-3 py-1 text-xs rounded-md bg-primary-600 text-white">7d</button>
+                        <button onclick="loadHeatmap(30)" id="hm-30" class="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-white transition-all">30d</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div class="bg-surface-800/60 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 mb-1">Online Now</div>
+                    <div class="text-xl font-bold text-green-400" id="hm-online">--</div>
+                </div>
+                <div class="bg-surface-800/60 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 mb-1">Total Deaths</div>
+                    <div class="text-xl font-bold text-red-400" id="hm-total">--</div>
+                </div>
+                <div class="bg-surface-800/60 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 mb-1">PvP Kills</div>
+                    <div class="text-xl font-bold text-orange-400" id="hm-pvp">--</div>
+                </div>
+                <div class="bg-surface-800/60 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 mb-1">Top Weapon</div>
+                    <div class="text-lg font-bold text-yellow-400 truncate" id="hm-weapon">--</div>
+                </div>
+                <div class="bg-surface-800/60 rounded-lg p-3 text-center">
+                    <div class="text-xs text-gray-500 mb-1">Deadliest Zone</div>
+                    <div class="text-lg font-bold text-red-300 truncate" id="hm-zone">--</div>
+                </div>
+            </div>
+            <div class="relative bg-surface-900 rounded-xl overflow-hidden" style="aspect-ratio:3/2;">
+                <img src="{{ url_for('static', filename='images/gta_map.jpg') }}" class="absolute inset-0 w-full h-full object-cover" alt="GTA V Map" id="heatmap-bg">
+                <canvas id="heatmap-canvas" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+            <div class="flex justify-between items-center mt-2">
+                <p class="text-xs text-gray-600"><span class="text-green-400">● Player</span> &nbsp; <span class="text-red-400">● PvP kill</span> &nbsp; <span class="text-orange-400">● Env death</span></p>
+                <p class="text-xs text-gray-600">Auto-updates every 5s</p>
+            </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="skull" class="w-5 h-5 inline mr-2 text-red-400"></i>Death Breakdown by Weapon</h2>
+            <div id="weapon-breakdown" class="grid grid-cols-2 md:grid-cols-4 gap-3"><p class="text-gray-600 text-sm">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ==================== SESSION LOG TAB ==================== -->
+    <div id="panel-sessions" class="tab-panel hidden">
+        <!-- Category breakdown cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Total</div>
+                <div class="text-2xl font-bold text-white" id="sl-total">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-green-500 mb-1">Quit</div>
+                <div class="text-2xl font-bold text-green-400" id="sl-quit">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-yellow-500 mb-1">Timeout</div>
+                <div class="text-2xl font-bold text-yellow-400" id="sl-timeout">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-red-500 mb-1">Crash</div>
+                <div class="text-2xl font-bold text-red-400" id="sl-crash">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-orange-500 mb-1">Connection</div>
+                <div class="text-2xl font-bold text-orange-400" id="sl-connection">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-purple-500 mb-1">Kicked</div>
+                <div class="text-2xl font-bold text-purple-400" id="sl-kicked">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-blue-500 mb-1">Server</div>
+                <div class="text-2xl font-bold text-blue-400" id="sl-server">0</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 text-center">
+                <div class="text-xs uppercase tracking-wider text-gray-500 mb-1">Other</div>
+                <div class="text-2xl font-bold text-gray-400" id="sl-other">0</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Category Chart -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-lg font-semibold text-white mb-4"><i data-lucide="pie-chart" class="w-5 h-5 inline mr-2 text-primary-400"></i>Disconnect Reasons</h2>
+                <div style="height:250px;"><canvas id="chart-disconnect"></canvas></div>
+            </div>
+
+            <!-- Filter & Search -->
+            <div class="glass-card rounded-2xl p-6 lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white"><i data-lucide="list" class="w-5 h-5 inline mr-2 text-primary-400"></i>Session History</h2>
+                    <div class="flex space-x-1 bg-surface-800/60 rounded-lg p-0.5">
+                        <button onclick="filterSessions('all')" id="sf-all" class="px-3 py-1 text-xs rounded-md bg-primary-600 text-white">All</button>
+                        <button onclick="filterSessions('quit')" id="sf-quit" class="px-3 py-1 text-xs rounded-md text-gray-400">Quit</button>
+                        <button onclick="filterSessions('crash')" id="sf-crash" class="px-3 py-1 text-xs rounded-md text-gray-400">Crash</button>
+                        <button onclick="filterSessions('timeout')" id="sf-timeout" class="px-3 py-1 text-xs rounded-md text-gray-400">Timeout</button>
+                        <button onclick="filterSessions('kicked')" id="sf-kicked" class="px-3 py-1 text-xs rounded-md text-gray-400">Kicked</button>
+                        <button onclick="filterSessions('connection')" id="sf-connection" class="px-3 py-1 text-xs rounded-md text-gray-400">Network</button>
+                    </div>
+                </div>
+                <input type="text" id="search-sessions" placeholder="Search by player name..." oninput="filterSessionList()" class="w-full px-3 py-2 mb-3 bg-surface-800/60 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50">
+                <div id="session-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+                    <p class="text-gray-600 text-sm">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ===== UTILS =====
+function fmt(m){if(!m)return'0m';var d=Math.floor(m/1440),h=Math.floor((m%1440)/60),mn=m%60;var p=[];if(d>0)p.push(d+'d');if(h>0)p.push(h+'h');if(mn>0||!p.length)p.push(mn+'m');return p.join(' ');}
+function money(n){if(!n&&n!==0)return'$0';if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(1)+'K';return'$'+n.toLocaleString();}
+
+function filterList(containerId, query) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var items = container.children;
+    var q = query.toLowerCase().trim();
+    for (var i = 0; i < items.length; i++) {
+        var text = items[i].textContent.toLowerCase();
+        items[i].style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+    }
+}
+
+function setActive(prefix, active) {
+    ['today','week','month','all'].forEach(function(p){
+        var el=document.getElementById(prefix+'-'+p);
+        if(el){el.classList.remove('bg-primary-600','text-white');el.classList.add('text-gray-400');}
+    });
+    var a=document.getElementById(prefix+'-'+active);
+    if(a){a.classList.add('bg-primary-600','text-white');a.classList.remove('text-gray-400');}
+}
+
+Chart.defaults.color = '#9ca3af';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+var chartInstances = {};
+
+// ===== TAB SYSTEM =====
+var loadedTabs = {};
+function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.add('hidden');});
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('bg-primary-600','text-white');b.classList.add('text-gray-400');});
+    document.getElementById('panel-'+name).classList.remove('hidden');
+    document.getElementById('tab-'+name).classList.add('bg-primary-600','text-white');
+    document.getElementById('tab-'+name).classList.remove('text-gray-400');
+    if(!loadedTabs[name]){
+        loadedTabs[name]=true;
+        if(name==='peak')loadPeakHours();
+        if(name==='retention')loadRetention();
+        if(name==='economy')loadEconomy();
+        if(name==='heatmap')loadHeatmap(7);
+        if(name==='sessions')loadSessionLog();
+    } else if(name==='heatmap'){
+        fetchLivePositions();
+        if(heatmapInterval)clearInterval(heatmapInterval);
+        heatmapInterval=setInterval(fetchLivePositions, 5000);
+    }
+    if(name!=='heatmap'&&heatmapInterval){clearInterval(heatmapInterval);heatmapInterval=null;}
+    if(window.lucide)lucide.createIcons();
+}
+
+// ===== OVERVIEW =====
+function loadOverview(){
+    fetch('/api/admin/overview').then(function(r){return r.json();}).then(function(d){
+        if(d.error)return;
+        document.getElementById('ov-active').textContent=d.active_players;
+        document.getElementById('ov-today').textContent=d.unique_today;
+        document.getElementById('ov-week').textContent=d.unique_week;
+        document.getElementById('ov-total').textContent=d.unique_total;
+        document.getElementById('ov-kills').textContent=d.kills_today;
+        document.getElementById('ov-deaths').textContent=d.deaths_today;
+        document.getElementById('ov-pt-today').textContent=fmt(d.playtime_today_minutes);
+        document.getElementById('ov-pt-week').textContent=fmt(d.playtime_week_minutes);
+        document.getElementById('ov-kills-week').textContent=d.kills_week;
+        document.getElementById('ov-deaths-week').textContent=d.deaths_week;
+        document.getElementById('ov-unique-total').textContent=d.unique_total;
+    }).catch(function(){});
+}
+
+function loadActivePlayers(){
+    fetch('/api/admin/active-players').then(function(r){return r.json();}).then(function(d){
+        var el=document.getElementById('live-players');
+        document.getElementById('live-count').textContent=(d.count||0)+' online';
+        if(!d.players||d.players.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No players online</p>';return;}
+        el.innerHTML='';
+        d.players.forEach(function(p){
+            var div=document.createElement('div');
+            div.className='flex items-center justify-between py-2 px-3 bg-surface-800/50 rounded-lg';
+            div.innerHTML='<div class="flex items-center space-x-3"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span class="text-white text-sm">'+p.username+'</span></div><span class="text-gray-400 text-xs">'+fmt(p.session_minutes)+'</span>';
+            el.appendChild(div);
+        });
+    }).catch(function(){});
+}
+
+function loadPlaytimeLB(period){
+    setActive('ptlb',period);
+    fetch('/api/admin/leaderboard/'+period).then(function(r){return r.json();}).then(function(data){
+        var el=document.getElementById('pt-leaderboard');
+        if(!data||data.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No data for this period</p>';return;}
+        el.innerHTML='';
+        data.forEach(function(p){
+            var medal='';
+            if(p.rank===1)medal='🥇';else if(p.rank===2)medal='🥈';else if(p.rank===3)medal='🥉';else medal='<span class="text-gray-500 w-6 inline-block text-center">'+p.rank+'</span>';
+            var div=document.createElement('div');
+            div.className='flex items-center justify-between py-2 px-3 bg-surface-800/50 rounded-lg';
+            div.innerHTML='<div class="flex items-center space-x-3"><span class="text-sm">'+medal+'</span><span class="text-white text-sm">'+p.username+'</span></div><span class="text-primary-400 text-sm font-semibold">'+fmt(p.total_minutes)+'</span>';
+            el.appendChild(div);
+        });
+    }).catch(function(){});
+}
+
+function loadKillLB(period){
+    setActive('klb',period);
+    fetch('/api/admin/kill-leaderboard/'+period).then(function(r){return r.json();}).then(function(data){
+        var el=document.getElementById('kill-leaderboard');
+        if(!data||data.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No data for this period</p>';return;}
+        el.innerHTML='';
+        data.forEach(function(p){
+            var medal='';
+            if(p.rank===1)medal='🥇';else if(p.rank===2)medal='🥈';else if(p.rank===3)medal='🥉';else medal='<span class="text-gray-500 w-6 inline-block text-center">'+p.rank+'</span>';
+            var div=document.createElement('div');
+            div.className='flex items-center justify-between py-2 px-3 bg-surface-800/50 rounded-lg';
+            div.innerHTML='<div class="flex items-center space-x-3"><span class="text-sm">'+medal+'</span><span class="text-white text-sm">'+p.username+'</span></div><div class="text-right"><span class="text-red-400 text-sm font-semibold">'+p.kills+'K</span><span class="text-gray-500 mx-1">/</span><span class="text-gray-400 text-sm">'+p.deaths+'D</span><span class="text-gray-600 text-xs ml-2">('+p.kd_ratio+')</span></div>';
+            el.appendChild(div);
+        });
+    }).catch(function(){});
+}
+
+function loadKillFeed(){
+    fetch('/api/admin/recent-kills').then(function(r){return r.json();}).then(function(data){
+        var el=document.getElementById('kill-feed');
+        if(!data||data.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No kills recorded yet.</p>';return;}
+        el.innerHTML='';
+        data.forEach(function(e){
+            var div=document.createElement('div');
+            div.className='flex items-center justify-between py-3 px-4 bg-surface-800/50 rounded-lg';
+            var killer=e.killer||'Environment',victim=e.victim||'Unknown',weapon=e.weapon||'Unknown',cause=e.cause||'Unknown';
+            var html='';
+            if(e.type==='kill'&&killer!=='Environment'){
+                html='<div class="flex items-center space-x-3 flex-1 min-w-0"><div class="flex-shrink-0 w-14 text-center"><span class="text-xs font-bold uppercase px-2 py-1 bg-red-500/20 text-red-400 rounded-md">KILL</span></div><div class="flex items-center space-x-2 text-sm flex-1 min-w-0"><span class="text-white font-semibold truncate">'+killer+'</span><i data-lucide="arrow-right" class="w-3 h-3 text-red-500 flex-shrink-0"></i><span class="text-gray-300 truncate">'+victim+'</span><span class="text-gray-600 flex-shrink-0">•</span><span class="text-yellow-500 text-xs flex-shrink-0">'+weapon+'</span></div></div>';
+            } else {
+                var dd='';
+                if(killer&&killer!=='Environment'&&killer!=='Unknown'){dd='<span class="text-gray-400">killed by</span> <span class="text-white font-semibold">'+killer+'</span> <span class="text-gray-600">•</span> <span class="text-yellow-500 text-xs">'+weapon+'</span>';}
+                else if(cause&&cause!=='Unknown'&&cause!=='Weapon'){dd='<span class="text-gray-400">died from</span> <span class="text-orange-400">'+cause+'</span>';}
+                else{dd='<span class="text-gray-400">died from</span> <span class="text-orange-400">'+weapon+'</span>';}
+                html='<div class="flex items-center space-x-3 flex-1 min-w-0"><div class="flex-shrink-0 w-14 text-center"><span class="text-xs font-bold uppercase px-2 py-1 bg-gray-500/20 text-gray-400 rounded-md">DEATH</span></div><div class="flex items-center space-x-2 text-sm flex-1 min-w-0"><span class="text-white font-semibold truncate">'+victim+'</span> '+dd+'</div></div>';
+            }
+            var time=new Date(e.time);
+            html+='<span class="text-gray-600 text-xs whitespace-nowrap ml-4">'+time.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' • '+time.toLocaleDateString()+'</span>';
+            div.innerHTML=html;el.appendChild(div);
+        });
+        if(window.lucide)lucide.createIcons();
+    }).catch(function(){});
+}
+
+// ===== PEAK HOURS =====
+function loadPeakHours(){
+    fetch('/api/admin/analytics/peak-hours').then(function(r){return r.json();}).then(function(d){
+        if(d.error)return;
+        document.getElementById('peak-hour').textContent=d.peak_hour||'N/A';
+        document.getElementById('peak-avg').textContent=d.peak_avg||0;
+        if(d.daily&&d.daily.length>0){
+            var best=d.daily.reduce(function(a,b){return a.unique_players>b.unique_players?a:b;});
+            document.getElementById('best-day').textContent=new Date(best.date+'T12:00:00').toLocaleDateString([],{month:'short',day:'numeric'});
+            document.getElementById('best-day-count').textContent=best.unique_players;
+            var totalPlayers=0;d.daily.forEach(function(x){totalPlayers+=x.unique_players;});
+            document.getElementById('avg-daily').textContent=Math.round(totalPlayers/d.daily.length);
+        }
+        if(chartInstances.hourly)chartInstances.hourly.destroy();
+        var ctx=document.getElementById('chart-hourly').getContext('2d');
+        chartInstances.hourly=new Chart(ctx,{type:'bar',data:{labels:d.hourly.map(function(h){return h.label;}),datasets:[{label:'Avg Players',data:d.hourly.map(function(h){return h.avg_players;}),backgroundColor:'rgba(99,102,241,0.6)',borderColor:'rgba(99,102,241,1)',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+        if(chartInstances.daily)chartInstances.daily.destroy();
+        var ctx2=document.getElementById('chart-daily').getContext('2d');
+        chartInstances.daily=new Chart(ctx2,{type:'line',data:{labels:d.daily.map(function(x){return new Date(x.date+'T12:00:00').toLocaleDateString([],{month:'short',day:'numeric'});}),datasets:[{label:'Unique Players',data:d.daily.map(function(x){return x.unique_players;}),borderColor:'rgba(34,197,94,1)',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:0.3,pointRadius:3},{label:'Total Hours',data:d.daily.map(function(x){return Math.round(x.total_minutes/60);}),borderColor:'rgba(99,102,241,0.6)',backgroundColor:'transparent',borderDash:[5,5],tension:0.3,pointRadius:2,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}}},scales:{y:{beginAtZero:true,title:{display:true,text:'Players'}},y1:{position:'right',beginAtZero:true,title:{display:true,text:'Hours'},grid:{display:false}}}}});
+    }).catch(function(e){console.error('Peak hours error:',e);});
+}
+
+// ===== RETENTION =====
+function loadRetention(){
+    fetch('/api/admin/analytics/retention').then(function(r){return r.json();}).then(function(d){
+        if(d.error)return;
+        document.getElementById('ret-new').textContent=d.new_today;
+        document.getElementById('ret-returning').textContent=d.returning_today;
+        document.getElementById('ret-total').textContent=d.total_unique;
+        var el=document.getElementById('retention-funnel');el.innerHTML='';
+        var ret=d.retention;var colors=['#22c55e','#3b82f6','#a855f7','#f59e0b','#ef4444'];var i=0;
+        for(var key in ret){var r=ret[key];var pct=r.rate;var barW=Math.max(pct,5);var color=colors[i%colors.length];var div=document.createElement('div');div.innerHTML='<div class="flex items-center justify-between mb-1"><span class="text-white text-sm font-medium">'+key+'</span><span class="text-gray-400 text-sm">'+r.returned+'/'+r.total+' ('+pct+'%)</span></div><div class="w-full bg-surface-800/60 rounded-full h-8 overflow-hidden"><div class="h-full rounded-full flex items-center px-3 transition-all duration-500" style="width:'+barW+'%;background:'+color+';"><span class="text-white text-xs font-bold">'+pct+'%</span></div></div>';el.appendChild(div);i++;}
+        if(chartInstances.retention)chartInstances.retention.destroy();
+        var labels=[],values=[];for(var k in ret){labels.push(k);values.push(ret[k].rate);}
+        var ctx=document.getElementById('chart-retention').getContext('2d');
+        chartInstances.retention=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Retention Rate %',data:values,borderColor:'rgba(168,85,247,1)',backgroundColor:'rgba(168,85,247,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'rgba(168,85,247,1)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:function(v){return v+'%';}}}}}});
+    }).catch(function(e){console.error('Retention error:',e);});
+}
+
+// ===== ECONOMY =====
+function loadEconomy(){
+    fetch('/api/admin/analytics/economy').then(function(r){return r.json();}).then(function(d){
+        if(d.error)return;
+        document.getElementById('eco-cash').textContent=money(d.total_cash);
+        document.getElementById('eco-bank').textContent=money(d.total_bank);
+        document.getElementById('eco-total').textContent=money(d.total_circulation);
+        document.getElementById('eco-avg').textContent=money(d.avg_wealth);
+        var el=document.getElementById('richest-list');
+        if(!d.top_players||d.top_players.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No economy data yet.</p>';} else {
+            el.innerHTML='';var medals=['🥇','🥈','🥉'];
+            d.top_players.forEach(function(p,i){var medal=i<3?medals[i]:'<span class="text-gray-500 w-6 inline-block text-center">'+(i+1)+'</span>';var div=document.createElement('div');div.className='flex items-center justify-between py-2 px-3 bg-surface-800/50 rounded-lg';div.innerHTML='<div class="flex items-center space-x-3"><span class="text-sm">'+medal+'</span><span class="text-white text-sm">'+p.username+'</span></div><div class="text-right"><span class="text-green-400 text-xs">Cash: '+money(p.cash)+'</span><span class="text-gray-600 mx-2">|</span><span class="text-primary-400 text-xs">Bank: '+money(p.bank)+'</span><span class="text-gray-600 mx-2">|</span><span class="text-yellow-400 text-sm font-semibold">'+money(p.total)+'</span></div>';el.appendChild(div);});
+        }
+        if(chartInstances.distribution)chartInstances.distribution.destroy();
+        if(d.distribution){var ctx=document.getElementById('chart-distribution').getContext('2d');chartInstances.distribution=new Chart(ctx,{type:'doughnut',data:{labels:d.distribution.map(function(x){return x.label;}),datasets:[{data:d.distribution.map(function(x){return x.count;}),backgroundColor:['#ef4444','#f59e0b','#22c55e','#3b82f6','#a855f7'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:15}}}}});}
+        if(chartInstances.economy)chartInstances.economy.destroy();
+        if(d.timeline&&d.timeline.length>0){var ctx2=document.getElementById('chart-economy').getContext('2d');chartInstances.economy=new Chart(ctx2,{type:'line',data:{labels:d.timeline.map(function(x){return new Date(x.time).toLocaleDateString([],{month:'short',day:'numeric',hour:'2-digit'});}),datasets:[{label:'Total Cash',data:d.timeline.map(function(x){return x.total_cash;}),borderColor:'rgba(34,197,94,0.8)',backgroundColor:'transparent',tension:0.3,pointRadius:1},{label:'Total Bank',data:d.timeline.map(function(x){return x.total_bank;}),borderColor:'rgba(99,102,241,0.8)',backgroundColor:'transparent',tension:0.3,pointRadius:1},{label:'Total',data:d.timeline.map(function(x){return x.total;}),borderColor:'rgba(234,179,8,0.8)',backgroundColor:'rgba(234,179,8,0.05)',fill:true,tension:0.3,pointRadius:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}}},scales:{y:{beginAtZero:true,ticks:{callback:function(v){return money(v);}}}}}});}
+    }).catch(function(e){console.error('Economy error:',e);});
+}
+
+// ===== LIVE MAP + DEATH HEATMAP =====
+var currentHeatmapDays=7;var cachedDeathData=null;var cachedPlayerData=null;var heatmapInterval=null;
+var mapMinX=-4300,mapMaxX=5500,mapMinY=-4400,mapMaxY=8600;
+var mapRangeX=mapMaxX-mapMinX,mapRangeY=mapMaxY-mapMinY;
+function gameToPixel(gx,gy,cw,ch){return{x:((gx-mapMinX)/mapRangeX)*cw,y:((mapMaxY-gy)/mapRangeY)*ch};}
+
+function drawMap(){
+    var canvas=document.getElementById('heatmap-canvas');if(!canvas)return;
+    var container=canvas.parentElement;canvas.width=container.offsetWidth;canvas.height=container.offsetHeight;
+    var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+    var cw=canvas.width,ch=canvas.height;
+    var showDeaths=document.getElementById('show-deaths').checked;
+    var showPlayers=document.getElementById('show-players').checked;
+    if(showDeaths&&cachedDeathData&&cachedDeathData.length>0){
+        var gridSize=80;var grid={};
+        cachedDeathData.forEach(function(d){if(!d.x||!d.y)return;var gx=Math.floor(d.x/gridSize)*gridSize;var gy=Math.floor(d.y/gridSize)*gridSize;var key=gx+','+gy;grid[key]=(grid[key]||0)+1;});
+        for(var key in grid){if(grid[key]>=3){var parts=key.split(',');var p=gameToPixel(parseInt(parts[0])+gridSize/2,parseInt(parts[1])+gridSize/2,cw,ch);var intensity=Math.min(grid[key]/8,1);ctx.beginPath();ctx.arc(p.x,p.y,12+grid[key]*3,0,Math.PI*2);ctx.fillStyle='rgba(239,68,68,'+intensity*0.2+')';ctx.fill();}}
+        cachedDeathData.forEach(function(d){if(!d.x||!d.y)return;var p=gameToPixel(d.x,d.y,cw,ch);if(p.x<0||p.x>cw||p.y<0||p.y>ch)return;ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);if(d.type==='kill'){ctx.fillStyle='rgba(239,68,68,0.8)';ctx.shadowColor='rgba(239,68,68,0.5)';}else{ctx.fillStyle='rgba(251,146,60,0.7)';ctx.shadowColor='rgba(251,146,60,0.4)';}ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;});
+    }
+    if(showPlayers&&cachedPlayerData&&cachedPlayerData.length>0){
+        cachedPlayerData.forEach(function(pl){if(!pl.x&&!pl.y)return;var p=gameToPixel(pl.x,pl.y,cw,ch);if(p.x<0||p.x>cw||p.y<0||p.y>ch)return;
+            ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fillStyle='rgba(34,197,94,0.15)';ctx.fill();
+            ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.strokeStyle='rgba(34,197,94,0.6)';ctx.lineWidth=2;ctx.stroke();
+            ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle='rgba(34,197,94,1)';ctx.shadowColor='rgba(34,197,94,0.8)';ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;
+            ctx.font='bold 11px Inter, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.9)';ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=4;ctx.fillText(pl.name,p.x,p.y-14);ctx.shadowBlur=0;
+        });
+    }
+}
+function refreshMap(){drawMap();}
+function fetchLivePositions(){fetch('/api/admin/live-positions').then(function(r){return r.json();}).then(function(d){cachedPlayerData=d.players||[];document.getElementById('hm-online').textContent=cachedPlayerData.length;drawMap();}).catch(function(){});}
+
+function loadHeatmap(days){
+    currentHeatmapDays=days;
+    ['1','7','30'].forEach(function(d){var b=document.getElementById('hm-'+d);if(b){b.classList.remove('bg-primary-600','text-white');b.classList.add('text-gray-400');}});
+    var active=document.getElementById('hm-'+days);if(active){active.classList.add('bg-primary-600','text-white');active.classList.remove('text-gray-400');}
+    fetch('/api/admin/analytics/death-heatmap?days='+days).then(function(r){return r.json();}).then(function(data){
+        if(data.error)return;cachedDeathData=data;
+        var totalDeaths=data.length;var pvpKills=data.filter(function(d){return d.type==='kill';}).length;
+        document.getElementById('hm-total').textContent=totalDeaths;document.getElementById('hm-pvp').textContent=pvpKills;
+        var weapons={};data.forEach(function(d){var w=d.weapon||d.cause||'Unknown';weapons[w]=(weapons[w]||0)+1;});
+        var topWeapon='None',topCount=0;for(var w in weapons){if(weapons[w]>topCount){topCount=weapons[w];topWeapon=w;}}
+        document.getElementById('hm-weapon').textContent=topWeapon;
+        var zones={'North LS':0,'South LS':0,'Vinewood':0,'Sandy Shores':0,'Paleto Bay':0};
+        data.forEach(function(d){if(!d.x||!d.y)return;if(d.y>5000)zones['Paleto Bay']++;else if(d.y>2000)zones['Sandy Shores']++;else if(d.y>0)zones['Vinewood']++;else if(d.y>-1500)zones['North LS']++;else zones['South LS']++;});
+        var topZone='None',topZoneCount=0;for(var z in zones){if(zones[z]>topZoneCount){topZoneCount=zones[z];topZone=z;}}
+        document.getElementById('hm-zone').textContent=topZone;drawMap();
+        var wbEl=document.getElementById('weapon-breakdown');wbEl.innerHTML='';
+        var sorted=Object.entries(weapons).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
+        sorted.forEach(function(entry){var div=document.createElement('div');div.className='bg-surface-800/60 rounded-lg p-3';var pct=totalDeaths>0?Math.round((entry[1]/totalDeaths)*100):0;div.innerHTML='<div class="flex justify-between items-center mb-1"><span class="text-white text-sm truncate">'+entry[0]+'</span><span class="text-gray-400 text-xs">'+entry[1]+'</span></div><div class="w-full bg-surface-900 rounded-full h-2"><div class="h-full bg-red-500/60 rounded-full" style="width:'+pct+'%"></div></div>';wbEl.appendChild(div);});
+    }).catch(function(e){console.error('Heatmap error:',e);});
+    fetchLivePositions();if(heatmapInterval)clearInterval(heatmapInterval);heatmapInterval=setInterval(fetchLivePositions,5000);
+}
+
+// ===== SESSION LOG =====
+var allSessions=[];
+var currentFilter='all';
+var catColors={quit:'#22c55e',timeout:'#eab308',crash:'#ef4444',connection:'#f97316',kicked:'#a855f7',banned:'#dc2626',server:'#3b82f6',switch:'#06b6d4',other:'#6b7280'};
+var catLabels={quit:'Quit',timeout:'Timeout',crash:'Crash',connection:'Network',kicked:'Kicked',banned:'Banned',server:'Server',switch:'Switched',other:'Other'};
+
+function loadSessionLog(){
+    fetch('/api/admin/session-history?limit=200').then(function(r){return r.json();}).then(function(d){
+        if(d.error)return;
+        allSessions=d.sessions||[];
+        var cats=d.categories||{};
+        document.getElementById('sl-total').textContent=d.total||allSessions.length;
+        ['quit','timeout','crash','connection','kicked','server','other'].forEach(function(c){
+            var el=document.getElementById('sl-'+c);if(el)el.textContent=cats[c]||0;
+        });
+        var kickedEl=document.getElementById('sl-kicked');
+        if(kickedEl)kickedEl.textContent=(cats['kicked']||0)+(cats['banned']||0);
+
+        if(chartInstances.disconnect)chartInstances.disconnect.destroy();
+        var labels=[],data=[],colors=[];
+        for(var c in cats){if(cats[c]>0){labels.push(catLabels[c]||c);data.push(cats[c]);colors.push(catColors[c]||'#6b7280');}}
+        var ctx=document.getElementById('chart-disconnect').getContext('2d');
+        chartInstances.disconnect=new Chart(ctx,{type:'doughnut',data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10}}}}});
+        renderSessionList();
+    }).catch(function(e){console.error('Session log error:',e);});
+}
+
+function filterSessions(cat){
+    currentFilter=cat;
+    ['all','quit','crash','timeout','kicked','connection'].forEach(function(c){var el=document.getElementById('sf-'+c);if(el){el.classList.remove('bg-primary-600','text-white');el.classList.add('text-gray-400');}});
+    var a=document.getElementById('sf-'+cat);if(a){a.classList.add('bg-primary-600','text-white');a.classList.remove('text-gray-400');}
+    renderSessionList();
+}
+
+function filterSessionList(){renderSessionList();}
+
+function renderSessionList(){
+    var el=document.getElementById('session-list');
+    var search=(document.getElementById('search-sessions').value||'').toLowerCase().trim();
+    var filtered=allSessions.filter(function(s){
+        if(currentFilter!=='all'&&s.category!==currentFilter)return false;
+        if(search&&(s.username||'').toLowerCase().indexOf(search)===-1&&(s.player_name||'').toLowerCase().indexOf(search)===-1)return false;
+        return true;
+    });
+    if(filtered.length===0){el.innerHTML='<p class="text-gray-600 text-sm">No sessions found</p>';return;}
+    el.innerHTML='';
+
+    filtered.forEach(function(s){
+        var div=document.createElement('div');
+        div.className='py-3 px-4 bg-surface-800/50 rounded-lg';
+        var catColor=catColors[s.category]||'#6b7280';
+        var catLabel=catLabels[s.category]||s.category;
+        var startTime=new Date(s.session_start);
+        var endTime=s.session_end?new Date(s.session_end):null;
+        var timeStr=startTime.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' - '+(endTime?endTime.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Active');
+        var dateStr=startTime.toLocaleDateString([],{month:'short',day:'numeric'});
+
+        // Ping info
+        var pingHtml='';
+        if(s.ping)pingHtml='<span class="text-gray-600 text-xs">'+s.ping+'ms</span>';
+        if(s.avg_ping)pingHtml+='<span class="text-gray-700 text-xs ml-1">(avg:'+s.avg_ping+')</span>';
+
+        // Flags as small badges
+        var flagsHtml='';
+        if(s.flags&&s.flags.length>0){
+            s.flags.forEach(function(f){
+                var fc='#6b7280';
+                if(f.indexOf('SPIKE')>-1)fc='#ef4444';
+                else if(f.indexOf('CLIMBING')>-1)fc='#f97316';
+                else if(f.indexOf('SILENT')>-1)fc='#eab308';
+                else if(f.indexOf('DEAD')>-1)fc='#dc2626';
+                else if(f.indexOf('AFK')>-1)fc='#8b5cf6';
+                else if(f.indexOf('VEHICLE')>-1)fc='#3b82f6';
+                flagsHtml+='<span class="text-xs px-1.5 py-0.5 rounded-full ml-1" style="background:'+fc+'22;color:'+fc+'">'+f+'</span>';
+            });
+        }
+
+        // Analysis detail line
+        var analysisHtml='';
+        if(s.analysis){
+            analysisHtml='<div class="text-xs mt-1.5 pl-5 text-gray-500 leading-relaxed">→ '+s.analysis+'</div>';
+        }
+
+        div.innerHTML='<div class="flex items-center justify-between">'
+            +'<div class="flex items-center space-x-3 flex-1 min-w-0">'
+            +'<span class="flex-shrink-0 inline-block w-2 h-2 rounded-full" style="background:'+catColor+'"></span>'
+            +'<span class="text-white text-sm font-medium truncate">'+s.username+'</span>'
+            +'<span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium" style="background:'+catColor+'22;color:'+catColor+'">'+catLabel+'</span>'
+            +'<span class="text-gray-400 text-xs truncate" title="'+s.reason+'">'+s.reason+'</span>'
+            +pingHtml+flagsHtml
+            +'</div>'
+            +'<div class="flex-shrink-0 text-right ml-3">'
+            +'<div class="text-gray-400 text-xs">'+timeStr+'</div>'
+            +'<div class="text-gray-600 text-xs">'+dateStr+' • '+fmt(s.minutes)+'</div>'
+            +'</div></div>'
+            +analysisHtml;
+        el.appendChild(div);
+    });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',function(){
+    loadOverview();loadActivePlayers();loadPlaytimeLB('week');loadKillLB('week');loadKillFeed();
+    setInterval(function(){loadOverview();loadActivePlayers();loadKillFeed();},30000);
+});
+</script>
+{% endblock %}
